@@ -30,8 +30,14 @@ letters, and names shared by two comparably popular artists, are skipped), or
 through MusicBrainz's links when Wikidata has a MusicBrainz ID. A name match
 can occasionally land on the wrong artist.
 
-As of v0.3.0 that gives 164 of 197 countries: 162 contemporary, 111
-traditional.
+Territories with at least 5,000 people (Puerto Rico, Hong Kong, Guadeloupe...)
+go through the second and third passes only, and match artists by birthplace as
+well as citizenship, because their citizenship is usually recorded as the
+parent state. Smaller territories, and any that end up without artists, are
+accepted as guesses but are never the answer.
+
+As of v0.9.0 that gives 183 playable places: 164 of 197 countries and 19
+territories.
 
 At play time the page looks up the artist's tracks and streams a preview
 straight from Apple or Deezer.

@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.9.0 — 2026-10-07
+
+- 19 territories can now be the answer, with their own music: Puerto Rico,
+  Hong Kong, Macau, Guadeloupe, Martinique, French Guiana, Réunion, French
+  Polynesia, Greenland, the Faroe Islands, Aruba, Curaçao, Bermuda, Gibraltar,
+  Guernsey, Jersey, the Isle of Man, the US Virgin Islands and Åland. That
+  makes 183 playable places.
+- Territory artists are found by birthplace as well as citizenship, since
+  their citizenship is usually recorded as the parent state.
+- The other 34 territories stay guess-only.
+
 ## v0.8.1 — 2026-10-07
 
 - French Guiana, Greenland, Puerto Rico, Hong Kong and 50 other territories

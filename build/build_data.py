@@ -11,6 +11,10 @@ country, in three passes:
    for. Their ID is found by exact-name search on Deezer, or from MusicBrainz's
    links when Wikidata has a MusicBrainz ID.
 
+Territories (Hong Kong, Puerto Rico, Guadeloupe...) go through passes 2 and 3
+only, matching artists by birthplace as well as citizenship, because their
+citizenship is usually recorded as the parent state.
+
 Re-run to refresh:
 
     python build/build_data.py
@@ -38,6 +42,7 @@ TOP_UP_TO = 6      # pools smaller than this take less clear-cut artists too
 WIDE_BATCH = 8     # countries per query in the wider second pass
 LOOKUP_BATCH = 5   # countries per query in the third pass
 LOOKUP_TRIES = 25  # artists to try resolving per country per mode
+TERRITORY_MIN_POP = 5000  # smaller territories are guess-only
 MB_UA = "soundabouts-data-build/0.3 (music geography game)"
 
 # Citizenship is sometimes recorded against a different item than the one
@@ -136,14 +141,15 @@ def load_countries():
     for r in sorted(wd, key=lambda r: -int(qid(r["c"])[1:])):
         by_iso[r["iso"]] = r
 
-    out = {}
+    out, terr = {}, {}
     for c in raw:
         iso = c["cca2"]
-        if not c.get("unMember") and iso not in ("TW", "XK", "PS", "VA"):
-            continue
+        sovereign = c.get("unMember") or iso in ("TW", "XK", "PS", "VA")
         if iso not in by_iso or not c.get("latlng"):
             continue
-        out[iso] = {
+        if not sovereign and float(by_iso[iso]["pop"] or 0) < TERRITORY_MIN_POP:
+            continue
+        (out if sovereign else terr)[iso] = {
             "iso": iso,
             "name": c["name"]["common"],
             "flag": c.get("flag", ""),
@@ -158,7 +164,7 @@ def load_countries():
             "wiki": by_iso[iso]["title"] or c["name"]["common"],
             "_qids": [qid(by_iso[iso]["c"])] + EXTRA_QIDS.get(iso, []),
         }
-    return out
+    return out, terr
 
 
 def load_genres():
@@ -218,15 +224,29 @@ def artists_for(iso, qids):
       }} GROUP BY ?a ?aLabel ?links ORDER BY DESC(?links) LIMIT 400""", f"artists_{iso}")
 
 
-def artists_wide(batch):
+# How an artist is tied to a place. Territories also match on where a person
+# was born or a group was formed, anywhere inside the territory.
+PEOPLE = "{ ?a wdt:P27 ?c }"
+PEOPLE_T = "{ ?a wdt:P27 ?c } UNION { ?born_in wdt:P131* ?c . ?a wdt:P19 ?born_in }"
+GROUPS = "{ ?a wdt:P495 ?c . ?a wdt:P31/wdt:P279* wd:Q2088357 }"
+GROUPS_T = GROUPS + " UNION { ?formed_in wdt:P131* ?c . ?a wdt:P740 ?formed_in }"
+# Territory queries only finish if the places inside the territory are found
+# first, so they are written in that order and the optimizer is told to keep it.
+KEEP_ORDER = 'hint:Query hint:optimizer "None" .'
+
+
+def artists_wide(batch, territory=False):
     """Second pass for several small countries at once: genre optional, any
     artist with a Wikipedia article, plus occupations so non-musicians can go."""
     values = " ".join(f"wd:{q}" for _, qids in batch for q in qids)
+    people, groups = (PEOPLE_T, GROUPS_T) if territory else (PEOPLE, GROUPS)
+    hint = KEEP_ORDER if territory else ""
     rows = sparql(f"""SELECT ?c {ARTIST_FIELDS}
         (GROUP_CONCAT(DISTINCT STRAFTER(STR(?o), "entity/"); separator="|") AS ?jobs)
       WHERE {{
+        {hint}
         VALUES ?c {{ {values} }}
-        {{ ?a wdt:P27 ?c }} UNION {{ ?a wdt:P495 ?c . ?a wdt:P31/wdt:P279* wd:Q2088357 }}
+        {people} UNION {groups}
         ?a wikibase:sitelinks ?links .
         FILTER(?links >= 1)
         OPTIONAL {{ ?a wdt:P2850 ?apple }}
@@ -241,22 +261,25 @@ def artists_wide(batch):
       }} GROUP BY ?c ?a ?aLabel ?links""", "wide_" + "_".join(iso for iso, _ in batch))
     by_iso = {}
     for iso, qids in batch:
-        mine = [dict(r, wide=True) for r in rows if qid(r["c"]) in qids]
+        mine = [dict(r, wide=True, territory=territory) for r in rows if qid(r["c"]) in qids]
         by_iso[iso] = sorted(mine, key=lambda r: -int(r["links"]))
     return by_iso
 
 
-def artists_unlinked(batch, job_qids):
+def artists_unlinked(batch, job_qids, territory=False):
     """Third pass: musicians with no streaming ID on Wikidata."""
     values = " ".join(f"wd:{q}" for _, qids in batch for q in qids)
+    people, groups = (PEOPLE_T, GROUPS_T) if territory else (PEOPLE, GROUPS)
+    hint = KEEP_ORDER if territory else ""
     job_values = " ".join(f"wd:{q}" for q in job_qids)
     rows = sparql(f"""SELECT ?c {ARTIST_FIELDS}
         (GROUP_CONCAT(DISTINCT STRAFTER(STR(?o), "entity/"); separator="|") AS ?jobs)
         (SAMPLE(?mb) AS ?mbid)
       WHERE {{
+        {hint}
         VALUES ?c {{ {values} }}
-        {{ ?a wdt:P27 ?c ; wdt:P106 ?j . VALUES ?j {{ {job_values} }} }}
-        UNION {{ ?a wdt:P495 ?c . ?a wdt:P31/wdt:P279* wd:Q2088357 }}
+        {{ {{ {people} }} ?a wdt:P106 ?j . VALUES ?j {{ {job_values} }} }}
+        UNION {groups}
         ?a wikibase:sitelinks ?links .
         FILTER(?links >= 2)
         FILTER NOT EXISTS {{ ?a wdt:P2850 [] }}
@@ -271,7 +294,7 @@ def artists_unlinked(batch, job_qids):
       }} GROUP BY ?c ?a ?aLabel ?links""", "unlinked_" + "_".join(iso for iso, _ in batch))
     by_iso = {}
     for iso, qids in batch:
-        mine = [dict(r, wide=True) for r in rows if qid(r["c"]) in qids]
+        mine = [dict(r, wide=True, territory=territory) for r in rows if qid(r["c"]) in qids]
         by_iso[iso] = sorted(mine, key=lambda r: -int(r["links"]))
     return by_iso
 
@@ -385,11 +408,19 @@ def classify(row, labels, trad, classical, jobs):
     return None, False
 
 
+def usable(row):
+    """Skip unlabelled items and artists tied to a second country. A territory's
+    artists are nearly all tied to the parent state as well, so that is allowed."""
+    if row["aLabel"].startswith("Q"):
+        return False
+    return bool(row.get("territory")) or int(row["countries"] or 1) <= 1
+
+
 def build_pools(rows, labels, trad, classical, jobs):
     strict = {"modern": [], "trad": []}
     loose = {"modern": [], "trad": []}
     for r in rows:
-        if int(r["countries"] or 1) > 1 or r["aLabel"].startswith("Q"):
+        if not usable(r):
             continue
         kind, sure = classify(r, labels, trad, classical, jobs)
         if not kind:
@@ -425,9 +456,9 @@ def territories(have):
 
 
 def main():
-    countries = load_countries()
+    countries, terr = load_countries()
     labels, trad, classical = load_genres()
-    qids = {iso: c.pop("_qids") for iso, c in countries.items()}
+    qids = {iso: c.pop("_qids") for iso, c in list(countries.items()) + list(terr.items())}
 
     rows_by_iso = {}
     for iso in sorted(countries):
@@ -454,6 +485,18 @@ def main():
         except Exception as e:  # noqa: BLE001
             print(f"!! wide {[iso for iso, _ in batch]}: {e}", file=sys.stderr)
     label_missing(labels, all_genres(rows_by_iso), "labels_wide")
+
+    # Territories skip the first pass and start here, matched by birthplace too.
+    terr_isos = sorted(terr)
+    for i in range(0, len(terr_isos), LOOKUP_BATCH):
+        batch = [(iso, qids[iso]) for iso in terr_isos[i:i + LOOKUP_BATCH]]
+        try:
+            rows_by_iso.update(artists_wide(batch, territory=True))
+            print(f"   territories {i + len(batch)}/{len(terr_isos)}", flush=True)
+        except Exception as e:  # noqa: BLE001
+            print(f"!! territories {[iso for iso, _ in batch]}: {e}", file=sys.stderr)
+            rows_by_iso.update({iso: [] for iso, _ in batch})
+    label_missing(labels, all_genres(rows_by_iso), "labels_terr")
     jobs = fetch_labels({j for rows in rows_by_iso.values() for r in rows
                          for j in r.get("jobs", "").split("|")}, "jobs")
 
@@ -468,19 +511,27 @@ def main():
             print(f"   unlinked {i + len(batch)}/{len(thin)}", flush=True)
         except Exception as e:  # noqa: BLE001
             print(f"!! unlinked {[iso for iso, _ in batch]}: {e}", file=sys.stderr)
+    for i in range(0, len(terr_isos), LOOKUP_BATCH):
+        batch = [(iso, qids[iso]) for iso in terr_isos[i:i + LOOKUP_BATCH]]
+        try:
+            unlinked.update(artists_unlinked(batch, job_qids, territory=True))
+            print(f"   territories unlinked {i + len(batch)}/{len(terr_isos)}", flush=True)
+        except Exception as e:  # noqa: BLE001
+            print(f"!! territories unlinked {[iso for iso, _ in batch]}: {e}", file=sys.stderr)
     label_missing(labels, all_genres(unlinked), "labels_unlinked")
     jobs.update(fetch_labels({j for rows in unlinked.values() for r in rows
                               for j in r["jobs"].split("|")} - set(jobs), "jobs_unlinked"))
 
     resolved_file = CACHE / "resolved.json"
     resolved = json.loads(resolved_file.read_text(encoding="utf-8")) if resolved_file.exists() else {}
-    for n, iso in enumerate(thin):
+    lookups = thin + terr_isos
+    for n, iso in enumerate(lookups):
         pools = build_pools(rows_by_iso[iso], labels, trad, classical, jobs)
         need = {k: TOP_UP_TO - len(p) for k, p in pools.items()}
         tries = {"modern": 0, "trad": 0}
         found = 0
         for r in unlinked.get(iso, []):
-            if int(r["countries"] or 1) > 1 or r["aLabel"].startswith("Q"):
+            if not usable(r):
                 continue
             kind, _ = classify(r, labels, trad, classical, jobs)
             if not kind or need[kind] <= 0 or tries[kind] >= LOOKUP_TRIES:
@@ -491,11 +542,12 @@ def main():
                 need[kind] -= 1
                 found += 1
         resolved_file.write_text(json.dumps(resolved), encoding="utf-8")
-        print(f"   resolve {n + 1}/{len(thin)} {iso}: +{found} "
+        print(f"   resolve {n + 1}/{len(lookups)} {iso}: +{found} "
               f"(tried {tries['modern'] + tries['trad']})", flush=True)
 
     print(f"{len(countries)} countries, {len(labels)} genres, {len(trad)} traditional")
 
+    countries.update(terr)
     for i, (iso, c) in enumerate(sorted(countries.items())):
         pools = build_pools(rows_by_iso[iso], labels, trad, classical, jobs)
         for kind, pool in pools.items():
