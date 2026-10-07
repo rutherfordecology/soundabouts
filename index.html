@@ -7,6 +7,9 @@
 <title>Soundabouts — guess the country by its music</title>
 <meta name="description" content="A country is chosen at random and you hear its music. Guess where it's from.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎧</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -31,6 +34,11 @@
       </div>
 
       <div class="seek" aria-hidden="true"><div id="bar"></div></div>
+
+      <label class="volume">
+        <span>Volume</span>
+        <input id="vol" type="range" min="0" max="100" step="1" value="80">
+      </label>
 
       <div class="controls">
         <div class="keys">
@@ -58,11 +66,6 @@
             </button>
             <span>New clip</span>
           </div>
-        </div>
-        <div class="keycap">
-          <div id="vol" class="knob" role="slider" tabindex="0" aria-label="Volume"
-               aria-valuemin="0" aria-valuemax="100" aria-valuenow="80"><b></b></div>
-          <span>Volume</span>
         </div>
       </div>
 
@@ -92,20 +95,21 @@
     <div id="result" class="body result"></div>
   </section>
 
-  <aside class="credit">
-    <p>You never know what's next from</p>
-    <p class="name">Rutherford Ecology</p>
-    <a class="key coffee" href="https://buymeacoffee.com/rutherfordecology" target="_blank" rel="noopener">☕ Buy me a coffee</a>
-  </aside>
+  <p class="credit">
+    You never know what's next from
+    <a href="https://www.rutherfordecology.co.nz/" target="_blank" rel="noopener">Rutherford Ecology</a>
+    <span class="sep">&middot;</span>
+    <a class="bmc" href="https://buymeacoffee.com/rutherfordecology" target="_blank" rel="noopener">&#9749; Buy me a coffee</a>
+  </p>
 
   <footer>
     <p>Previews from Apple Music and Deezer. Artists from Wikidata, country
     summaries from Wikipedia. Distances are between country centres.</p>
     <p id="tally"></p>
-    <p>v0.6.0</p>
+    <p>v0.7.0</p>
   </footer>
 </main>
-<audio id="audio" preload="none"></audio>
+<audio id="audio" preload="none" crossorigin="anonymous"></audio>
 <script src="data/countries.js"></script>
 <script src="app.js"></script>
 </body>

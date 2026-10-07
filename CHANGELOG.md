@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.7.0 — 2026-10-07
+
+- The level bars now follow the actual music instead of a canned animation.
+- Volume is a slider instead of a dial; its groove shifts from green to red as
+  it goes up. Volume is applied through Web Audio, so it also works on iPhone.
+- The Rutherford Ecology credit and Buy me a coffee link are now one small
+  line in the same type and style as the other Rutherford Ecology apps.
+
 ## v0.6.0 — 2026-10-07
 
 - New look modelled on the classic Winamp skin: blue-grey panels with ridged

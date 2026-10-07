@@ -203,40 +203,71 @@ function setIcon(playing) {
   $('deck').classList.toggle('playing', playing);
 }
 
-// ---------- volume ----------
+// ---------- sound: volume and level bars ----------
+// Audio runs through a Web Audio graph so the bars can read the real signal and
+// the volume slider works on iPhone, where audio.volume is read-only.
+let ctx = null, gain = null, analyser = null, bins = null;
+const edges = [];
+const bars = [...document.querySelectorAll('.vis i')];
+
+// Must run inside a tap: browsers only start an audio context from a gesture.
+function wake() {
+  if (!ctx) {
+    try {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.75;
+      gain = ctx.createGain();
+      ctx.createMediaElementSource(audio).connect(analyser).connect(gain).connect(ctx.destination);
+      bins = new Uint8Array(analyser.frequencyBinCount);
+      // Bar edges spaced logarithmically from about 170 Hz to 15 kHz.
+      const top = Math.min(bins.length - 1, Math.round(15000 / (ctx.sampleRate / analyser.fftSize)));
+      let last = 0;
+      for (let i = 0; i <= bars.length; i++) {
+        last = Math.max(last + 1, Math.round(Math.pow(top, i / bars.length)));
+        edges.push(last);
+      }
+      audio.volume = 1;
+      setVolume(Number($('vol').value));
+    } catch {
+      ctx = null;
+      analyser = null;
+      $('deck').classList.add('fake');  // fall back to the canned animation
+    }
+  }
+  if (ctx && ctx.state !== 'running') ctx.resume();
+}
+
+function drawLevels() {
+  if (!analyser) return;
+  if (audio.paused) {
+    bars.forEach(bar => { bar.style.transform = ''; });
+    return;
+  }
+  analyser.getByteFrequencyData(bins);
+  bars.forEach((bar, i) => {
+    let sum = 0;
+    for (let j = edges[i]; j < edges[i + 1]; j++) sum += bins[j];
+    const level = sum / (edges[i + 1] - edges[i]) / 255;
+    bar.style.transform = `scaleY(${Math.max(0.06, level).toFixed(3)})`;
+  });
+  requestAnimationFrame(drawLevels);
+}
+
 function setVolume(v) {
   v = Math.max(0, Math.min(100, Math.round(v)));
-  audio.volume = v / 100;
+  if (gain) gain.gain.value = v / 100;
+  else audio.volume = v / 100;
   store.set('volume', v);
-  $('vol').setAttribute('aria-valuenow', v);
-  $('vol').firstElementChild.style.transform = `rotate(${-135 + v * 2.7}deg)`;
+  $('vol').value = v;
+  // Like the original, the groove runs from green through to red as it goes up.
+  $('vol').style.setProperty('--level', `hsl(${Math.round(120 - v * 1.15)} 90% 42%)`);
   $('vollab').textContent = `VOL ${String(v).padStart(2, '0')}`;
 }
 
 function wireVolume() {
-  const knob = $('vol');
-  const now = () => Number(knob.getAttribute('aria-valuenow'));
-  let drag = null;
-  knob.addEventListener('pointerdown', e => {
-    knob.setPointerCapture(e.pointerId);
-    drag = { x: e.clientX, y: e.clientY, v: now() };
-  });
-  // Dragging up or to the right turns it up.
-  knob.addEventListener('pointermove', e => {
-    if (drag) setVolume(drag.v + ((drag.y - e.clientY) + (e.clientX - drag.x)) * 0.8);
-  });
-  knob.addEventListener('pointerup', () => { drag = null; });
-  knob.addEventListener('pointercancel', () => { drag = null; });
-  knob.addEventListener('wheel', e => {
-    e.preventDefault();
-    setVolume(now() + (e.deltaY < 0 ? 5 : -5));
-  }, { passive: false });
-  knob.addEventListener('keydown', e => {
-    const step = { ArrowUp: 5, ArrowRight: 5, ArrowDown: -5, ArrowLeft: -5, PageUp: 20, PageDown: -20 }[e.key];
-    if (step) { e.preventDefault(); setVolume(now() + step); }
-    else if (e.key === 'Home') { e.preventDefault(); setVolume(0); }
-    else if (e.key === 'End') { e.preventDefault(); setVolume(100); }
-  });
+  $('vol').addEventListener('input', e => setVolume(Number(e.target.value)));
   setVolume(store.get('volume', 80));
 }
 
@@ -399,6 +430,7 @@ function setMode(next) {
 
 $('play').onclick = () => {
   if (!round) return;
+  wake();
   if (!audio.src) loadClip();
   else if (audio.paused) audio.play();
 };
@@ -409,18 +441,19 @@ $('stop').onclick = () => {
   setRing(0);
   setIcon(false);
 };
-$('next').onclick = () => { audio.pause(); loadClip(); };
+$('next').onclick = () => { wake(); audio.pause(); loadClip(); };
 $('reveal').onclick = () => finish(false);
 document.querySelectorAll('.modes button').forEach(b =>
-  b.onclick = () => { if (b.dataset.mode !== mode) setMode(b.dataset.mode); });
+  b.onclick = () => { if (b.dataset.mode !== mode) { wake(); setMode(b.dataset.mode); } });
 
 audio.addEventListener('playing', () => {
   setIcon(true);
+  drawLevels();
   $('next').classList.remove('offer');
   $('clipno').textContent = `CLIP ${String(round.heard.length).padStart(2, '0')}`;
   $('status').textContent = round.over ? 'Playing' : `Clip ${round.heard.length} · where is this from?`;
 });
-audio.addEventListener('pause', () => setIcon(false));
+audio.addEventListener('pause', () => { setIcon(false); drawLevels(); });
 audio.addEventListener('timeupdate', () => setRing(audio.duration ? audio.currentTime / audio.duration : 0));
 // When a clip finishes, offer another artist from the same country.
 audio.addEventListener('ended', () => {
