@@ -97,7 +97,7 @@
 
   <p class="credit">
     You never know what's next from
-    <a href="https://www.rutherfordecology.co.nz/" target="_blank" rel="noopener">Rutherford Ecology</a>
+    <a id="aboutlink" href="#about" aria-haspopup="dialog">Rutherford Ecology</a>
     <span class="sep">&middot;</span>
     <a class="bmc" href="https://buymeacoffee.com/rutherfordecology" target="_blank" rel="noopener">&#9749; Buy me a coffee</a>
   </p>
@@ -106,9 +106,29 @@
     <p>Previews from Apple Music and Deezer. Artists from Wikidata, country
     summaries from Wikipedia. Distances are between country centres.</p>
     <p id="tally"></p>
-    <p>v0.7.0</p>
+    <p>v0.8.0</p>
   </footer>
 </main>
+<dialog id="about" class="win" aria-labelledby="abouttitle">
+  <header class="titlebar"><h2 id="abouttitle">About</h2></header>
+  <div class="body about">
+    <p>Soundabouts is made by
+      <a href="https://www.rutherfordecology.co.nz/" target="_blank" rel="noopener">Rutherford Ecology</a>.
+      A country is picked at random; you hear its music and work out where you are.</p>
+    <h3>More from Rutherford Ecology</h3>
+    <ul class="apps">
+        <li><a href="https://occurd.rutherfordecology.co.nz/" target="_blank" rel="noopener"><b>occurd.</b><span>Draw a polygon, pull the biodiversity occurrence records inside it, export as CSV, GeoJSON or KML.</span></a></li>
+        <li><a href="https://occurd.rutherfordecology.co.nz/but-is-it-threatened/" target="_blank" rel="noopener"><b>but is it threatened?</b><span>Paste a species list, get its New Zealand threat classification back. NZOR names, NZTCS status.</span></a></li>
+        <li><a href="https://occurd.rutherfordecology.co.nz/looklike/" target="_blank" rel="noopener"><b>LookLike</b><span>A visual species photo browser &mdash; build a list and flick through the pictures.</span></a></li>
+        <li><a href="https://occurd.rutherfordecology.co.nz/whatdat/" target="_blank" rel="noopener"><b>WhatDat?</b><span>A photo ID quiz for any organism. Pick your taxa and see how you go.</span></a></li>
+        <li><a href="https://occurd.rutherfordecology.co.nz/nudis/" target="_blank" rel="noopener"><b>Nudis Near Me</b><span>The sea slugs recorded where you are standing, split by whether you are rockpooling or diving.</span></a></li>
+        <li><a href="https://occurd.rutherfordecology.co.nz/lizards/" target="_blank" rel="noopener"><b>Lizards (and snakes) Near Me</b><span>Geckos, skinks and tuatara around you, split by daylight and after dark.</span></a></li>
+        <li><a href="https://occurd.rutherfordecology.co.nz/oysters/" target="_blank" rel="noopener"><b>The World&rsquo;s Your Oysters</b><span>Every oyster species recorded near you, native or introduced, and where it sits in the tide.</span></a></li>
+        <li><a href="https://occurd.rutherfordecology.co.nz/mermaids/" target="_blank" rel="noopener"><b>Mermaids Near Me</b><span>There are no mermaids. Here is everything near you that has been mistaken for one.</span></a></li>
+    </ul>
+    <form method="dialog"><button class="key again">Close</button></form>
+  </div>
+</dialog>
 <audio id="audio" preload="none" crossorigin="anonymous"></audio>
 <script src="data/countries.js"></script>
 <script src="app.js"></script>

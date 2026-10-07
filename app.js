@@ -477,6 +477,10 @@ $('suggest').addEventListener('click', e => {
   if (li) submitGuess(li.dataset.iso);
 });
 
+$('aboutlink').onclick = e => { e.preventDefault(); $('about').showModal(); };
+// A click on the dimmed backdrop (the dialog element itself) closes it.
+$('about').onclick = e => { if (e.target === $('about')) $('about').close(); };
+
 if ('mediaSession' in navigator) {
   // Keep the lock screen from giving the answer away.
   navigator.mediaSession.metadata = new MediaMetadata({ title: 'Mystery track', artist: 'Soundabouts' });

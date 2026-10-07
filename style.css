@@ -348,5 +348,32 @@ button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparen
 .credit a.bmc { color: #f5a623; font-weight: 700; white-space: nowrap; border-bottom-color: rgba(245, 166, 35, 0.4); }
 .credit a.bmc:hover { color: #ffc45c; border-bottom-color: #ffc45c; }
 
+/* ---------- about ---------- */
+dialog.win {
+  width: min(420px, calc(100vw - 20px));
+  max-height: calc(100vh - 40px);
+  margin: auto;
+  overflow-y: auto;
+  color: #dcdce6;
+}
+dialog.win::backdrop { background: #000b; }
+.about p { margin: 4px 0 0; }
+.about a { color: var(--amber); }
+.about h3 { margin: 16px 0 6px; font: bold 11px var(--mono); text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); }
+.apps {
+  margin: 0;
+  padding: 2px 4px;
+  list-style: none;
+  background: var(--lcd);
+  border: 2px solid;
+  border-color: var(--edge-lo) var(--edge-hi) var(--edge-hi) var(--edge-lo);
+}
+.apps li + li { border-top: 1px dotted var(--lcd-dim); }
+.apps a { display: block; padding: 9px 6px; text-decoration: none; }
+.apps a:hover, .apps a:focus-visible { background: #1b57ff; outline: none; }
+.apps b { display: block; font: bold 13px var(--mono); color: var(--lcd-text); }
+.apps a:hover b, .apps a:focus-visible b { color: #fff; }
+.apps span { display: block; margin-top: 2px; font-size: 12px; line-height: 1.4; color: #b9c7b9; }
+
 footer { margin-top: 12px; text-align: center; font-size: 11px; color: #6f6f80; }
 footer p { margin: 4px 0; }

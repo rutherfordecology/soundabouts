@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.8.0 — 2026-10-07
+
+- "Rutherford Ecology" in the credit line now opens an About window with
+  links to the other Rutherford Ecology apps.
+
 ## v0.7.0 — 2026-10-07
 
 - The level bars now follow the actual music instead of a canned animation.
