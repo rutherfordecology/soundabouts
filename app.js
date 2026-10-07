@@ -5,7 +5,6 @@ const $ = id => document.getElementById(id);
 const audio = $('audio');
 const EARTH_KM = 6371;
 const HALF_WORLD_KM = Math.PI * EARTH_KM;
-const RING_LEN = 289;
 const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 const ALIASES = {
   US: 'usa america united states of america', GB: 'uk britain great britain england scotland wales',
@@ -140,7 +139,7 @@ function newRound() {
   store.set('recent', [target.iso, ...store.get('recent', [])].slice(0, 40));
 
   $('guesses').replaceChildren();
-  $('result').hidden = true;
+  $('resultwin').hidden = true;
   $('guessing').hidden = false;
   $('reveal').hidden = true;
   $('guess').value = '';
@@ -149,7 +148,9 @@ function newRound() {
   $('next').disabled = false;
   setRing(0);
   setIcon(false);
-  $('status').textContent = 'Tap play to listen';
+  $('next').classList.remove('offer');
+  $('clipno').textContent = 'CLIP --';
+  $('status').textContent = 'Press play to listen';
   showModes();
 }
 
@@ -175,7 +176,7 @@ async function loadClip() {
     try {
       await audio.play();
     } catch {
-      $('status').textContent = 'Tap play to listen';
+      $('status').textContent = 'Press play to listen';
     }
     return;
   }
@@ -190,14 +191,53 @@ async function loadClip() {
 }
 
 function setRing(fraction) {
-  $('ring').style.strokeDashoffset = RING_LEN * (1 - fraction);
+  const t = Math.floor(audio.currentTime || 0);
+  $('bar').style.width = `${fraction * 100}%`;
+  $('time').textContent = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
 }
 
 function setIcon(playing) {
-  $('icon').setAttribute('d', playing
-    ? 'M36 30 H46 V70 H36 Z M54 30 H64 V70 H54 Z'
-    : 'M40 30 L72 50 L40 70 Z');
-  $('play').setAttribute('aria-label', playing ? 'Pause' : 'Play');
+  // The play key stays down while a clip is playing, like a tape deck.
+  $('play').setAttribute('aria-pressed', playing);
+  $('state').textContent = playing ? '▶' : (audio.src && audio.currentTime ? '❚❚' : '■');
+  $('deck').classList.toggle('playing', playing);
+}
+
+// ---------- volume ----------
+function setVolume(v) {
+  v = Math.max(0, Math.min(100, Math.round(v)));
+  audio.volume = v / 100;
+  store.set('volume', v);
+  $('vol').setAttribute('aria-valuenow', v);
+  $('vol').firstElementChild.style.transform = `rotate(${-135 + v * 2.7}deg)`;
+  $('vollab').textContent = `VOL ${String(v).padStart(2, '0')}`;
+}
+
+function wireVolume() {
+  const knob = $('vol');
+  const now = () => Number(knob.getAttribute('aria-valuenow'));
+  let drag = null;
+  knob.addEventListener('pointerdown', e => {
+    knob.setPointerCapture(e.pointerId);
+    drag = { x: e.clientX, y: e.clientY, v: now() };
+  });
+  // Dragging up or to the right turns it up.
+  knob.addEventListener('pointermove', e => {
+    if (drag) setVolume(drag.v + ((drag.y - e.clientY) + (e.clientX - drag.x)) * 0.8);
+  });
+  knob.addEventListener('pointerup', () => { drag = null; });
+  knob.addEventListener('pointercancel', () => { drag = null; });
+  knob.addEventListener('wheel', e => {
+    e.preventDefault();
+    setVolume(now() + (e.deltaY < 0 ? 5 : -5));
+  }, { passive: false });
+  knob.addEventListener('keydown', e => {
+    const step = { ArrowUp: 5, ArrowRight: 5, ArrowDown: -5, ArrowLeft: -5, PageUp: 20, PageDown: -20 }[e.key];
+    if (step) { e.preventDefault(); setVolume(now() + step); }
+    else if (e.key === 'Home') { e.preventDefault(); setVolume(0); }
+    else if (e.key === 'End') { e.preventDefault(); setVolume(100); }
+  });
+  setVolume(store.get('volume', 80));
 }
 
 // ---------- guessing ----------
@@ -288,7 +328,7 @@ async function finish(won) {
   const wikiUrl = 'https://en.wikipedia.org/wiki/' + encodeURIComponent(c.wiki.replace(/ /g, '_'));
   const fact = (label, value) => value
     ? [el('dt', { textContent: label }), el('dd', { textContent: value })] : [];
-  const again = el('button', { className: 'again', textContent: 'Play another country' });
+  const again = el('button', { className: 'key again', textContent: 'Play another country' });
   again.onclick = newRound;
 
   box.replaceChildren(
@@ -311,8 +351,8 @@ async function finish(won) {
       el('a', { href: t.link, target: '_blank', rel: 'noopener', textContent: t.title }),
       ` — ${t.artist} (${t.source})`))),
     again);
-  box.hidden = false;
-  box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  $('resultwin').hidden = false;
+  $('resultwin').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   try {
     const res = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' +
@@ -341,6 +381,7 @@ function showModes() {
     b.disabled = none;
     b.title = none ? 'No music in this style found for this country' : '';
   });
+  $('stylelab').textContent = mode === 'trad' ? 'TRADITIONAL' : 'CONTEMPORARY';
 }
 
 // Switching style mid-round keeps the same country and plays its other pool.
@@ -360,7 +401,13 @@ $('play').onclick = () => {
   if (!round) return;
   if (!audio.src) loadClip();
   else if (audio.paused) audio.play();
-  else audio.pause();
+};
+$('pause').onclick = () => audio.pause();
+$('stop').onclick = () => {
+  audio.pause();
+  if (audio.src) audio.currentTime = 0;
+  setRing(0);
+  setIcon(false);
 };
 $('next').onclick = () => { audio.pause(); loadClip(); };
 $('reveal').onclick = () => finish(false);
@@ -369,11 +416,18 @@ document.querySelectorAll('.modes button').forEach(b =>
 
 audio.addEventListener('playing', () => {
   setIcon(true);
+  $('next').classList.remove('offer');
+  $('clipno').textContent = `CLIP ${String(round.heard.length).padStart(2, '0')}`;
   $('status').textContent = round.over ? 'Playing' : `Clip ${round.heard.length} · where is this from?`;
 });
 audio.addEventListener('pause', () => setIcon(false));
 audio.addEventListener('timeupdate', () => setRing(audio.duration ? audio.currentTime / audio.duration : 0));
-audio.addEventListener('ended', () => { setRing(0); $('status').textContent = 'Tap to hear it again'; });
+// When a clip finishes, offer another artist from the same country.
+audio.addEventListener('ended', () => {
+  setRing(0);
+  $('status').textContent = 'Clip finished · replay it or try another';
+  if (!$('next').disabled) $('next').classList.add('offer');
+});
 audio.addEventListener('error', () => { if (audio.src && round && !round.over) loadClip(); });
 
 $('guess').addEventListener('input', showSuggestions);
@@ -395,6 +449,7 @@ if ('mediaSession' in navigator) {
   navigator.mediaSession.metadata = new MediaMetadata({ title: 'Mystery track', artist: 'Soundabouts' });
 }
 
+wireVolume();
 countries = window.SOUNDABOUTS_COUNTRIES || [];
 if (countries.length) {
   for (const c of countries) {

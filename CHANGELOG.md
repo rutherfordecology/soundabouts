@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.6.0 — 2026-10-07
+
+- New look modelled on the classic Winamp skin: blue-grey panels with ridged
+  gold title bars, a green LCD with a clock and level bars, and raised keys
+  that press down.
+- Separate Play, Pause, Stop and New clip keys; Play stays down while a clip
+  is playing.
+- Volume dial: drag it, scroll over it, or use the arrow keys. The setting is
+  remembered.
+- Guesses are listed playlist-style in their own window; the answer gets a
+  window too.
+- "You never know what's next from Rutherford Ecology" credit and a Buy me a
+  coffee link.
+
+## v0.5.0 — 2026-10-07
+
+- When a clip finishes, a highlighted "Play another clip" button offers a
+  different artist from the same country, in the selected style. The button
+  (previously "Play a different artist") is also available while a clip plays.
+
 ## v0.4.1 — 2026-10-07
 
 - Renamed from the working name "overhrd." to Soundabouts. Saved play counts

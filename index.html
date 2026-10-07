@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#14110f">
+<meta name="theme-color" content="#16161d">
 <title>Soundabouts — guess the country by its music</title>
 <meta name="description" content="A country is chosen at random and you hear its music. Guess where it's from.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎧</text></svg>">
@@ -11,46 +11,98 @@
 </head>
 <body>
 <main>
-  <header>
-    <h1>Soundabouts</h1>
-    <p class="tag">Where in the world is this playing?</p>
-  </header>
+  <section class="win" id="deck" aria-label="Player">
+    <header class="titlebar"><h1>Soundabouts</h1></header>
+    <div class="body">
+      <div class="lcd">
+        <div class="lcd-top">
+          <span id="state" class="state" aria-hidden="true">■</span>
+          <span id="time" class="time" aria-hidden="true">0:00</span>
+          <div class="vis" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+        </div>
+        <p id="status" class="status" aria-live="polite">Loading…</p>
+        <div class="lcd-foot" aria-hidden="true">
+          <span id="clipno">CLIP --</span>
+          <span id="stylelab">CONTEMPORARY</span>
+          <span id="vollab">VOL 80</span>
+        </div>
+      </div>
 
-  <div class="modes" role="group" aria-label="Music style">
-    <button data-mode="modern" aria-pressed="true">Contemporary</button>
-    <button data-mode="trad" aria-pressed="false">Traditional</button>
-  </div>
+      <div class="seek" aria-hidden="true"><div id="bar"></div></div>
 
-  <section class="player" aria-label="Mystery track">
-    <button id="play" class="play" aria-label="Play">
-      <svg viewBox="0 0 100 100" aria-hidden="true">
-        <circle class="ring-bg" cx="50" cy="50" r="46"/>
-        <circle id="ring" class="ring" cx="50" cy="50" r="46"/>
-        <path id="icon" d="M40 30 L72 50 L40 70 Z"/>
-      </svg>
-    </button>
-    <p id="status" class="status" aria-live="polite">Loading…</p>
-    <button id="next" class="link" disabled>Play a different artist ↻</button>
-  </section>
+      <div class="controls">
+        <div class="keys">
+          <div class="keycap">
+            <button id="play" class="key big" aria-label="Play" aria-pressed="false">
+              <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M32 22 L78 50 L32 78 Z"/></svg>
+            </button>
+            <span>Play</span>
+          </div>
+          <div class="keycap">
+            <button id="pause" class="key big" aria-label="Pause">
+              <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M28 24 H44 V76 H28 Z M56 24 H72 V76 H56 Z"/></svg>
+            </button>
+            <span>Pause</span>
+          </div>
+          <div class="keycap">
+            <button id="stop" class="key big" aria-label="Stop">
+              <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M26 26 H74 V74 H26 Z"/></svg>
+            </button>
+            <span>Stop</span>
+          </div>
+          <div class="keycap">
+            <button id="next" class="key big" aria-label="Play another clip" disabled>
+              <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M14 24 L48 50 L14 76 Z M46 24 L80 50 L46 76 Z M80 24 H90 V76 H80 Z"/></svg>
+            </button>
+            <span>New clip</span>
+          </div>
+        </div>
+        <div class="keycap">
+          <div id="vol" class="knob" role="slider" tabindex="0" aria-label="Volume"
+               aria-valuemin="0" aria-valuemax="100" aria-valuenow="80"><b></b></div>
+          <span>Volume</span>
+        </div>
+      </div>
 
-  <section id="guessing">
-    <div class="guessbox">
-      <input id="guess" type="text" placeholder="Guess a country…" autocomplete="off"
-             autocapitalize="words" spellcheck="false" enterkeyhint="go"
-             role="combobox" aria-expanded="false" aria-controls="suggest" disabled>
-      <ul id="suggest" role="listbox" hidden></ul>
+      <div class="modes" role="group" aria-label="Music style">
+        <button class="key latch" data-mode="modern" aria-pressed="true"><i></i>Contemporary</button>
+        <button class="key latch" data-mode="trad" aria-pressed="false"><i></i>Traditional</button>
+      </div>
     </div>
-    <ol id="guesses" class="guesses" aria-label="Your guesses"></ol>
-    <button id="reveal" class="link" hidden>Give up and reveal</button>
   </section>
 
-  <section id="result" class="result" hidden></section>
+  <section class="win" id="guessing" aria-label="Guesses">
+    <header class="titlebar"><h2>Guess the country</h2></header>
+    <div class="body">
+      <div class="guessbox">
+        <input id="guess" type="text" placeholder="Type a country…" autocomplete="off"
+               autocapitalize="words" spellcheck="false" enterkeyhint="go"
+               role="combobox" aria-expanded="false" aria-controls="suggest" disabled>
+        <ul id="suggest" role="listbox" hidden></ul>
+      </div>
+      <ol id="guesses" class="guesses" aria-label="Your guesses"></ol>
+      <button id="reveal" class="key small" hidden>Give up and reveal</button>
+    </div>
+  </section>
+
+  <section class="win" id="resultwin" aria-label="Answer" hidden>
+    <header class="titlebar"><h2>The answer</h2></header>
+    <div id="result" class="body result"></div>
+  </section>
+
+  <aside class="credit">
+    <p>You never know what's next from</p>
+    <p class="name">Rutherford Ecology</p>
+    <a class="key coffee" href="https://buymeacoffee.com/rutherfordecology" target="_blank" rel="noopener">☕ Buy me a coffee</a>
+  </aside>
 
   <footer>
     <p>Previews from Apple Music and Deezer. Artists from Wikidata, country
     summaries from Wikipedia. Distances are between country centres.</p>
     <p id="tally"></p>
-    <p>v0.4.1</p>
+    <p>v0.6.0</p>
   </footer>
 </main>
 <audio id="audio" preload="none"></audio>
