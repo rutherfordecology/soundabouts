@@ -413,6 +413,17 @@ def all_genres(rows_by_iso):
     return {g for rows in rows_by_iso.values() for r in rows for g in r["genres"].split("|")}
 
 
+def territories(have):
+    """Places that are not sovereign states (French Guiana, Greenland, Puerto
+    Rico...). Never the answer, but accepted as guesses so they still return a
+    distance and direction."""
+    raw = json.loads((CACHE / "mledoze.json").read_text(encoding="utf-8"))
+    return [{"iso": c["cca2"], "name": c["name"]["common"], "flag": c.get("flag", ""),
+             "lat": round(c["latlng"][0], 2), "lon": round(c["latlng"][1], 2),
+             "modern": [], "trad": []}
+            for c in raw if c["cca2"] not in have and c.get("latlng")]
+
+
 def main():
     countries = load_countries()
     labels, trad, classical = load_genres()
@@ -492,7 +503,8 @@ def main():
         print(f"{i + 1:3}/{len(countries)} {iso} {c['name'][:28]:28} "
               f"modern {len(c['modern']):2}  trad {len(c['trad']):2}")
 
-    data = sorted(countries.values(), key=lambda c: c["name"])
+    data = sorted(list(countries.values()) + territories(set(countries)),
+                  key=lambda c: c["name"])
     OUT.parent.mkdir(exist_ok=True)
     # A script, not JSON, so the page also works opened straight from disk.
     OUT.write_text("window.SOUNDABOUTS_COUNTRIES="

@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.8.1 — 2026-10-07
+
+- French Guiana, Greenland, Puerto Rico, Hong Kong and 50 other territories
+  can now be entered as guesses. They are never the answer, but they return a
+  distance and direction like any other guess.
+
 ## v0.8.0 — 2026-10-07
 
 - "Rutherford Ecology" in the credit line now opens an About window with
