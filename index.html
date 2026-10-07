@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14110f">
+<title>Soundabouts — guess the country by its music</title>
+<meta name="description" content="A country is chosen at random and you hear its music. Guess where it's from.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎧</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Soundabouts</h1>
+    <p class="tag">Where in the world is this playing?</p>
+  </header>
+
+  <div class="modes" role="group" aria-label="Music style">
+    <button data-mode="modern" aria-pressed="true">Contemporary</button>
+    <button data-mode="trad" aria-pressed="false">Traditional</button>
+  </div>
+
+  <section class="player" aria-label="Mystery track">
+    <button id="play" class="play" aria-label="Play">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <circle class="ring-bg" cx="50" cy="50" r="46"/>
+        <circle id="ring" class="ring" cx="50" cy="50" r="46"/>
+        <path id="icon" d="M40 30 L72 50 L40 70 Z"/>
+      </svg>
+    </button>
+    <p id="status" class="status" aria-live="polite">Loading…</p>
+    <button id="next" class="link" disabled>Play a different artist ↻</button>
+  </section>
+
+  <section id="guessing">
+    <div class="guessbox">
+      <input id="guess" type="text" placeholder="Guess a country…" autocomplete="off"
+             autocapitalize="words" spellcheck="false" enterkeyhint="go"
+             role="combobox" aria-expanded="false" aria-controls="suggest" disabled>
+      <ul id="suggest" role="listbox" hidden></ul>
+    </div>
+    <ol id="guesses" class="guesses" aria-label="Your guesses"></ol>
+    <button id="reveal" class="link" hidden>Give up and reveal</button>
+  </section>
+
+  <section id="result" class="result" hidden></section>
+
+  <footer>
+    <p>Previews from Apple Music and Deezer. Artists from Wikidata, country
+    summaries from Wikipedia. Distances are between country centres.</p>
+    <p id="tally"></p>
+    <p>v0.4.1</p>
+  </footer>
+</main>
+<audio id="audio" preload="none"></audio>
+<script src="data/countries.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

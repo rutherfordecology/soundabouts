@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "soundabouts",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "7889"],
+      "port": 7889
+    }
+  ]
+}
