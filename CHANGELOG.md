@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.10.0 — 2026-10-12
+
+- New game: guess by time. You hear one piece and guess the year it is from.
+  Each guess only tells you whether the music is newer or older, not by how
+  much. From 1950 on you need the exact year; before 1950 the right decade
+  will do; before 1830 anything within 50 years.
+- "Guess by place" and "Guess by time" keys switch between the two games.
+  Each keeps its own play count.
+- The year game draws on 1,015 pieces: 371 classical works from the 1500s to
+  1949 and 644 songs from 1904 to now, with years from Wikidata.
+- When a round ends there is now a blurb about who you heard, with a link to
+  read more: the band or the composer in the year game, and a line on each
+  artist heard in the place game.
+
 ## v0.9.0 — 2026-10-07
 
 - 19 territories can now be the answer, with their own music: Puerto Rico,

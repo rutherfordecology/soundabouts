@@ -4,8 +4,12 @@ Guess the country from its music. A country is picked at random, you hear a
 30-second clip by an artist from there, and every guess tells you how far away
 and in which direction the answer lies.
 
-Static site: `index.html`, `style.css`, `app.js` and `data/countries.js`. No
-build step, no API keys, works from GitHub Pages.
+Or guess by time: you hear one piece and guess the year. Each guess only says
+whether the music is newer or older. From 1950 on the exact year is needed;
+before 1950 the right decade will do, and before 1830 anything within 50 years.
+
+Static site: `index.html`, `style.css`, `app.js`, `data/countries.js` and
+`data/tracks.js`. No build step, no API keys, works from GitHub Pages.
 
 ## Where the music comes from
 
@@ -42,11 +46,45 @@ territories.
 At play time the page looks up the artist's tracks and streams a preview
 straight from Apple or Deezer.
 
+Each artist also carries the title of their English Wikipedia article, where
+they have one, for the blurb shown when a round ends.
+
 Refresh the data with:
 
     python build/build_data.py
 
 Query results are cached in `build/cache/`; delete it to fetch fresh.
+
+## Where the years come from
+
+`build/build_tracks.py` builds the guess-by-time list from Wikidata (through
+QLever's mirror, which is much faster for these queries) and matches each
+piece to tracks on Deezer:
+
+- **Classical works** written before 1950: anything with a composer and a
+  date that falls inside the composer's lifetime. The date is the work's
+  inception, or failing that the earlier of first performance and
+  publication. National anthems are left out. A Deezer track counts if its
+  title contains the work's name and the composer is credited on it.
+- **Songs** from 1900 on: singles and songs with a single performer and a
+  publication date. Songs dated before their performer was 12, before the
+  band formed or after the performer died are dropped, since that is a cover
+  carrying the original's date. The Deezer track must be by that artist with
+  that title, and its release must not be older than the year Wikidata gives.
+
+Classical works are taken in order of how many Wikipedia articles they have,
+up to 15 per decade and three per composer in a decade. For songs, the 40
+with the most articles in each year are looked up and the 8 most played on
+Deezer are kept (12 per decade before 1950), one per artist per year and five
+per artist overall. Ranking by articles alone fills recent years with
+Eurovision entries.
+
+As of v0.10.0 that gives 1,015 pieces: 371 classical works and 644 songs. A
+year is only as good as Wikidata's date for it, and a classical match can
+occasionally be an arrangement or a different work with the same name by the
+same composer.
+
+    python build/build_tracks.py
 
 ## Running locally
 

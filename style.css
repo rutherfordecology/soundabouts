@@ -152,7 +152,7 @@ button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparen
   background: linear-gradient(to bottom, var(--key-lo), var(--key) 70%, var(--key-hi));
   box-shadow: inset 2px 2px 3px #0008, 0 1px 0 #0b0b10;
 }
-.key:focus-visible, #vol:focus-visible, #guess:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.key:focus-visible, #vol:focus-visible, #guess:focus-visible, #year:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
 .key:disabled { cursor: default; color: #6f6f7c; }
 .key:disabled svg { fill: #7d7d8a; }
 .key svg { display: block; width: 100%; height: 100%; fill: var(--ink); }
@@ -215,6 +215,7 @@ button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparen
 }
 
 .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; padding-bottom: 4px; }
+.modes + .modes { margin-top: 12px; }
 .key.latch {
   display: flex;
   align-items: center;
@@ -246,7 +247,7 @@ button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparen
 
 /* ---------- guesses ---------- */
 .guessbox { position: relative; }
-#guess {
+#guess, #year {
   width: 100%;
   padding: 12px;
   border: 2px solid;
@@ -256,7 +257,17 @@ button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparen
   color: var(--lcd-text);
   font: 16px var(--mono);
 }
-#guess::placeholder { color: var(--lcd-dim); }
+#guess::placeholder, #year::placeholder { color: var(--lcd-dim); }
+.yearbox { display: flex; align-items: flex-start; gap: 10px; }
+.yearbox input { flex: 1; min-width: 0; }
+.yearbox .key {
+  padding: 0 18px;
+  height: 43px;
+  font: bold 11px/1 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.hint { margin: 8px 2px 0; font-size: 12px; line-height: 1.4; }
 #suggest {
   position: absolute;
   z-index: 5;
@@ -324,6 +335,8 @@ button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparen
 .result h3 { margin: 16px 0 6px; font: bold 11px var(--mono); text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); }
 .result ul { margin: 0; padding-left: 18px; }
 .result a { color: var(--amber); }
+.result .blurb { margin: 3px 0 9px; font-size: 13px; line-height: 1.4; color: #b4b8d6; }
+.result .more { margin: 8px 0 0; }
 .again {
   display: block;
   width: 100%;

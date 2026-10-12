@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#16161d">
-<title>Soundabouts — guess the country by its music</title>
-<meta name="description" content="A country is chosen at random and you hear its music. Guess where it's from.">
+<title>Soundabouts — guess the country or the year by its music</title>
+<meta name="description" content="You hear a piece of music picked at random. Guess where it's from, or when.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎧</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -69,7 +69,12 @@
         </div>
       </div>
 
-      <div class="modes" role="group" aria-label="Music style">
+      <div class="modes" id="games" role="group" aria-label="What to guess">
+        <button class="key latch" data-game="place" aria-pressed="true"><i></i>Guess by place</button>
+        <button class="key latch" data-game="time" aria-pressed="false"><i></i>Guess by time</button>
+      </div>
+
+      <div class="modes" id="styles" role="group" aria-label="Music style">
         <button class="key latch" data-mode="modern" aria-pressed="true"><i></i>Contemporary</button>
         <button class="key latch" data-mode="trad" aria-pressed="false"><i></i>Traditional</button>
       </div>
@@ -77,14 +82,22 @@
   </section>
 
   <section class="win" id="guessing" aria-label="Guesses">
-    <header class="titlebar"><h2>Guess the country</h2></header>
+    <header class="titlebar"><h2 id="guesstitle">Guess the country</h2></header>
     <div class="body">
-      <div class="guessbox">
+      <div class="guessbox" id="placebox">
         <input id="guess" type="text" placeholder="Type a country…" autocomplete="off"
                autocapitalize="words" spellcheck="false" enterkeyhint="go"
                role="combobox" aria-expanded="false" aria-controls="suggest" disabled>
         <ul id="suggest" role="listbox" hidden></ul>
       </div>
+      <form class="yearbox" id="yearbox" hidden>
+        <input id="year" type="text" inputmode="numeric" maxlength="4" placeholder="Type a year…"
+               autocomplete="off" enterkeyhint="go" aria-label="Year" disabled>
+        <button id="yeargo" class="key" disabled>Guess</button>
+      </form>
+      <p class="hint" id="yearhint" hidden>Each guess only tells you whether the music is newer or
+        older. From 1950 on you need the exact year. Before 1950 the right decade will do, and
+        before 1830 anything within 50 years.</p>
       <ol id="guesses" class="guesses" aria-label="Your guesses"></ol>
       <button id="reveal" class="key small" hidden>Give up and reveal</button>
     </div>
@@ -103,10 +116,10 @@
   </p>
 
   <footer>
-    <p>Previews from Apple Music and Deezer. Artists from Wikidata, country
+    <p>Previews from Apple Music and Deezer. Artists and years from Wikidata,
     summaries from Wikipedia. Distances are between country centres.</p>
     <p id="tally"></p>
-    <p>v0.9.0</p>
+    <p>v0.10.0</p>
   </footer>
 </main>
 <dialog id="about" class="win" aria-labelledby="abouttitle">
@@ -114,7 +127,8 @@
   <div class="body about">
     <p>Soundabouts is made by
       <a href="https://www.rutherfordecology.co.nz/" target="_blank" rel="noopener">Rutherford Ecology</a>.
-      A country is picked at random; you hear its music and work out where you are.</p>
+      A country is picked at random; you hear its music and work out where you are.
+      Or guess by time: hear one piece, from the 1500s to now, and work out the year.</p>
     <h3>More from Rutherford Ecology</h3>
     <ul class="apps">
         <li><a href="https://occurd.rutherfordecology.co.nz/" target="_blank" rel="noopener"><b>occurd.</b><span>Draw a polygon, pull the biodiversity occurrence records inside it, export as CSV, GeoJSON or KML.</span></a></li>
@@ -131,6 +145,7 @@
 </dialog>
 <audio id="audio" preload="none" crossorigin="anonymous"></audio>
 <script src="data/countries.js"></script>
+<script src="data/tracks.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

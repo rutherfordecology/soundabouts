@@ -15,6 +15,9 @@ Territories (Hong Kong, Puerto Rico, Guadeloupe...) go through passes 2 and 3
 only, matching artists by birthplace as well as citizenship, because their
 citizenship is usually recorded as the parent state.
 
+Each artist kept also gets the title of their English Wikipedia article, where
+there is one, for the blurb shown when a round ends.
+
 Re-run to refresh:
 
     python build/build_data.py
@@ -364,6 +367,24 @@ def resolve(row, cache):
     return bool(row["apple"] or row["deezer"])
 
 
+def wikipedia_titles(qids):
+    """English Wikipedia article titles for Wikidata items that have one."""
+    f = CACHE / "titles.json"
+    titles = json.loads(f.read_text(encoding="utf-8")) if f.exists() else {}
+    wanted = sorted(set(qids) - set(titles))
+    for i in range(0, len(wanted), 50):
+        batch = wanted[i:i + 50]
+        data = json.loads(http_get("https://www.wikidata.org/w/api.php?" + urllib.parse.urlencode({
+            "action": "wbgetentities", "ids": "|".join(batch), "props": "sitelinks",
+            "sitefilter": "enwiki", "format": "json"})))
+        for q in batch:
+            links = data.get("entities", {}).get(q, {}).get("sitelinks", {})
+            titles[q] = links.get("enwiki", {}).get("title", "")
+        time.sleep(0.3)
+    f.write_text(json.dumps(titles), encoding="utf-8")
+    return titles
+
+
 def is_trad(g, name, trad):
     if any(w in name for w in NOT_TRAD_WORDS):
         return False
@@ -425,7 +446,7 @@ def build_pools(rows, labels, trad, classical, jobs):
         kind, sure = classify(r, labels, trad, classical, jobs)
         if not kind:
             continue
-        entry = {"n": r["aLabel"]}
+        entry = {"n": r["aLabel"], "q": qid(r["a"])}
         if r["apple"]:
             entry["a"] = r["apple"]
         if r["deezer"]:
@@ -554,6 +575,14 @@ def main():
             c[kind] = pool if len(pool) >= MIN_ARTISTS else []
         print(f"{i + 1:3}/{len(countries)} {iso} {c['name'][:28]:28} "
               f"modern {len(c['modern']):2}  trad {len(c['trad']):2}")
+
+    artists = [a for c in countries.values() for kind in ("modern", "trad") for a in c[kind]]
+    titles = wikipedia_titles(a["q"] for a in artists)
+    for a in artists:
+        title = titles[a.pop("q")]
+        if title:
+            a["w"] = title
+    print(f"{sum(1 for a in artists if 'w' in a)} of {len(artists)} artists have a Wikipedia article")
 
     data = sorted(list(countries.values()) + territories(set(countries)),
                   key=lambda c: c["name"])
