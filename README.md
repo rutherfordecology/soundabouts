@@ -6,7 +6,7 @@ and in which direction the answer lies.
 
 Or guess by time: you hear one piece and guess the year. Each guess only says
 whether the music is newer or older. From 1950 on the exact year is needed;
-before 1950 the right decade will do, and before 1830 anything within 50 years.
+before 1950 the right decade will do, and before 1600 anything within 50 years.
 
 Static site: `index.html`, `style.css`, `app.js`, `data/countries.js` and
 `data/tracks.js`. No build step, no API keys, works from GitHub Pages.

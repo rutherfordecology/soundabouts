@@ -390,9 +390,9 @@ function submitGuess(iso) {
 }
 
 // From 1950 on only the exact year counts; before that the right decade will
-// do, and before 1830 anything within 50 years.
+// do, and before 1600 anything within 50 years.
 function yearHit(guess, year) {
-  if (year < 1830) return Math.abs(guess - year) <= 50;
+  if (year < 1600) return Math.abs(guess - year) <= 50;
   if (year < 1950) return Math.floor(guess / 10) === Math.floor(year / 10);
   return guess === year;
 }

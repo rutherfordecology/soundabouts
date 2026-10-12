@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.10.1 — 2026-10-12
+
+- Guess by time: the right decade is now needed back to 1600 (it was 1830).
+  Only music from before 1600 is won by being within 50 years.
+
 ## v0.10.0 — 2026-10-12
 
 - New game: guess by time. You hear one piece and guess the year it is from.
